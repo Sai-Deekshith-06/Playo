@@ -2,8 +2,8 @@ package com.sportify.sports.controller;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
-import com.sportify.sports.entity.User;
-import com.sportify.sports.repository.UserRepository;
+import com.sportify.commonmodels.entity.User;
+import com.sportify.commonmodels.repository.UserRepository;
 import com.sportify.sports.service.UploadImage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,7 +43,7 @@ public class UpdateProfileController {
             User user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-            String imageUrl = user.getProfileLink() ;
+            String imageUrl = user.getProfileLink();
             // Upload to Cloudinary
             if (file != null && !file.isEmpty()) {
                 Map uploadResult = cloudinary.uploader().upload(

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { PencilIcon } from "@heroicons/react/24/solid";
 import AvatarEditor from "react-avatar-editor";
 import axiosInstance from "../../../api/axios";
-import { useUser } from "../../../utils/userContext";
+import { useAuthStore } from "../../../stores/authStore";
 import { EditProfileSkeleton } from "./Skeletons";
 import toast from "react-hot-toast";
 
@@ -11,7 +11,7 @@ export default function EditProfile() {
     const fileInputRef = useRef(null);
 
 
-    const { user, updateUser } = useUser();
+    const { user, updateUser } = useAuthStore();
     const [form, setForm] = useState(null);
 
     const [image, setImage] = useState(null);
@@ -100,7 +100,7 @@ export default function EditProfile() {
             const updatedUser = {
                 ...user,
                 name: nameChanged ? form.name.trim() : user.name,
-                image: imageChanged ? imageUrl : user.image,
+                profileLink: imageChanged ? imageUrl : user.profileLink,
             };
 
             updateUser(updatedUser);
@@ -137,7 +137,7 @@ export default function EditProfile() {
                         <>
                             <div className="bg-green-600 text-white rounded-full p-1 shadow">
                                 <img
-                                    src={user.image}
+                                    src={user.profileLink}
                                     alt="profile"
                                     className="w-28 h-28 rounded-full object-cover border-2 border-white"
                                 />
@@ -219,7 +219,7 @@ export default function EditProfile() {
                             Phone
                         </label>
                         <input
-                            value={form.mobile || ""}
+                            value={form.phone || ""}
                             disabled
                             className="w-full h-10 px-3 bg-gray-100 border border-[#E3E8E6] rounded-md"
                         />

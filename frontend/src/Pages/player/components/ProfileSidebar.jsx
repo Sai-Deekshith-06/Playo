@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { useUser } from "../../../utils/userContext";
+import { useAuthStore } from "../../../stores/authStore";
+import { useNavigate } from "react-router-dom";
 
 export default function ProfileSidebar({ activeTab, setActiveTab }) {
-    const { user } = useUser();
-    const { logout } = useUser();
+    const { user, logout } = useAuthStore();
+    const navigate = useNavigate();
     return (
         <div
             className="
@@ -19,12 +20,12 @@ export default function ProfileSidebar({ activeTab, setActiveTab }) {
                 {/* DESKTOP PROFILE INFO */}
                 <div className="hidden md:flex flex-col items-center py-6 border-b">
                     <img
-                        src={user?.image}
+                        src={user?.profileLink}
                         alt="profile"
                         className="w-16 h-16 rounded-full object-cover"
                     />
                     <h3 className="font-semibold mt-2">{user?.name}</h3>
-                    <p className="text-sm text-gray-600">{user?.mobile}</p>
+                    <p className="text-sm text-gray-600">{user?.phone}</p>
                     <p className="text-sm text-gray-500 text-center">
                         {user?.email}
                     </p>
@@ -43,6 +44,12 @@ export default function ProfileSidebar({ activeTab, setActiveTab }) {
                         label="Profile"
                         active={activeTab === "edit"}
                         onClick={() => setActiveTab("edit")}
+                    />
+
+                    <SidebarButton
+                        label="Security"
+                        active={activeTab === "security"}
+                        onClick={() => setActiveTab("security")}
                     />
 
                     <SidebarButton

@@ -20,8 +20,8 @@ services:
   # Auth Server
   auth-server:
     build:
-      context: ./auth-server
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: auth-server/Dockerfile
     container_name: auth-server
     ports:
       - "8081:8081"
@@ -59,8 +59,8 @@ services:
   # Admin Service
   admin-service:
     build:
-      context: ./admin-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: admin-service/Dockerfile
     container_name: admin-service
     ports:
       - "8030:8030"

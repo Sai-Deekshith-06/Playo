@@ -16,24 +16,30 @@ import io.jsonwebtoken.security.Keys;
 @Service
 public class JwtService {
 
-    private static final String SECRET =
-            "your_super_secret_key_that_is_at_least_256_bits_long";
+    private static final String SECRET = "your_super_secret_key_that_is_at_least_256_bits_long";
 
     private final Key key = Keys.hmacShaKeyFor(SECRET.getBytes());
 
     public String generateToken(String email) {
-        return generateToken(email, null);
+        return generateToken(email, null, null);
     }
 
     public String generateToken(String email, String username) {
+        return generateToken(email, username, null);
+    }
+
+    public String generateToken(String email, String username, String role) {
         JwtBuilder builder = Jwts.builder()
                 .setSubject(email)
                 .setIssuedAt(new Date())
                 .setExpiration(Date.from(
-                        Instant.now().plus(3, ChronoUnit.HOURS)   /* Token expires after 1 hours */
+                        Instant.now().plus(3, ChronoUnit.HOURS) /* Token expires after 3 hours */
                 ));
         if (username != null && !username.isBlank()) {
             builder.claim("username", username);
+        }
+        if (role != null && !role.isBlank()) {
+            builder.claim("role", role);
         }
 
         return builder
@@ -58,7 +64,11 @@ public class JwtService {
         return getClaims(token).getSubject();
     }
 
-    public Date extractExpiration(String token){
+    public String extractRole(String token) {
+        return getClaims(token).get("role", String.class);
+    }
+
+    public Date extractExpiration(String token) {
         return getClaims(token).getExpiration();
     }
 

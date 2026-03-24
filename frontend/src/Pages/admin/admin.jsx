@@ -33,39 +33,43 @@ export default function Admin() {
       setLoading(true);
       setError("");
 
-      const [queueRes, approvedRes, rejectedRes, pendingRes] = await Promise.all([
-        axiosInstance.get("/api/admin/center-applications", {
-          params: { page: queuePage, size: pageSize },
-          headers: adminHeaders,
-        }),
-        axiosInstance.get("/api/admin/center-applications", {
-          params: { page: approvedPage, size: pageSize, status: "APPROVED" },
-          headers: adminHeaders,
-        }),
-        axiosInstance.get("/api/admin/center-applications", {
-          params: { page: 0, size: 1, status: "REJECTED" },
-          headers: adminHeaders,
-        }),
-        axiosInstance.get("/api/admin/center-applications", {
-          params: { page: 0, size: 1, status: "PENDING" },
-          headers: adminHeaders,
-        }),
-      ]);
+      const response = await axiosInstance.get("/api/admin/center-applications", {
+        headers: adminHeaders,
+      });
 
-      const queueContent = queueRes.data?.content || [];
-      const onlyQueue = queueContent.filter((item) => item.status !== "APPROVED");
+      const rawApplications = Array.isArray(response.data)
+        ? response.data
+        : Array.isArray(response.data?.content)
+          ? response.data.content
+          : [];
 
-      setApplications(onlyQueue);
-      setQueueTotalPages(queueRes.data?.totalPages || 0);
+      const normalized = rawApplications.map((item) => ({
+        ...item,
+        status: (item.status || "").toString().toUpperCase(),
+      }));
 
-      setApprovedApplications(approvedRes.data?.content || []);
-      setApprovedTotalPages(approvedRes.data?.totalPages || 0);
+      const queueAll = normalized.filter((item) => item.status !== "APPROVED");
+      const approvedAll = normalized.filter((item) => item.status === "APPROVED");
+
+      const queuePages = Math.max(1, Math.ceil(queueAll.length / pageSize));
+      const approvedPages = Math.max(1, Math.ceil(approvedAll.length / pageSize));
+      const queueSafePage = Math.min(queuePage, queuePages - 1);
+      const approvedSafePage = Math.min(approvedPage, approvedPages - 1);
+
+      const queueStart = queueSafePage * pageSize;
+      const approvedStart = approvedSafePage * pageSize;
+
+      setApplications(queueAll.slice(queueStart, queueStart + pageSize));
+      setApprovedApplications(approvedAll.slice(approvedStart, approvedStart + pageSize));
+
+      setQueueTotalPages(queuePages);
+      setApprovedTotalPages(approvedPages);
 
       setAnalytics({
-        total: queueRes.data?.totalElements || 0,
-        approved: approvedRes.data?.totalElements || 0,
-        rejected: rejectedRes.data?.totalElements || 0,
-        pending: pendingRes.data?.totalElements || 0,
+        total: normalized.length,
+        approved: approvedAll.length,
+        rejected: normalized.filter((item) => item.status === "REJECTED").length,
+        pending: normalized.filter((item) => item.status === "PENDING").length,
       });
     } catch (apiError) {
       console.error("Failed to load applications:", apiError);

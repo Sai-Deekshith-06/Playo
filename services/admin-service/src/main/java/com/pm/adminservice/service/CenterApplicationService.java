@@ -28,6 +28,7 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 public class CenterApplicationService {
 
     private final SportsCenterApplicationRepository repository;
+    private final OwnerAccountService ownerAccountService;
 
     @Transactional
     public CenterApplicationResponse createApplication(CenterApplicationRequest request) {
@@ -62,8 +63,7 @@ public class CenterApplicationService {
             String city,
             LocalDate fromDate,
             LocalDate toDate,
-            String search
-    ) {
+            String search) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
 
         Specification<SportsCenterApplication> spec = buildFilterSpec(status, city, fromDate, toDate, search);
@@ -75,7 +75,7 @@ public class CenterApplicationService {
     @Transactional(readOnly = true)
     public CenterApplicationResponse getApplicationById(Long applicationId) {
         SportsCenterApplication application = repository.findOne(
-                        byId(applicationId).and(notDeleted()))
+                byId(applicationId).and(notDeleted()))
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Application not found"));
 
         return toResponse(application);
@@ -85,8 +85,7 @@ public class CenterApplicationService {
     public CenterApplicationResponse updateApplicationStatus(
             Long applicationId,
             UpdateApplicationStatusRequest request,
-            String reviewer
-    ) {
+            String reviewer) {
         if (request.status() == null) {
             throw new ResponseStatusException(BAD_REQUEST, "status is required");
         }
@@ -96,7 +95,7 @@ public class CenterApplicationService {
         }
 
         SportsCenterApplication application = repository.findOne(
-                        byId(applicationId).and(notDeleted()))
+                byId(applicationId).and(notDeleted()))
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Application not found"));
 
         application.setStatus(request.status());
@@ -104,13 +103,42 @@ public class CenterApplicationService {
         application.setReviewedBy(reviewer);
         application.setReviewedAt(Instant.now());
 
+        repository.save(application);
+
+        // Send emails based on status
+        if (request.status() == ApplicationStatus.APPROVED) {
+            // Create OWNER account if not exists
+            ownerAccountService.createOrUpdateOwnerAccount(
+                    application.getEmail(),
+                    application.getName(),
+                    application.getPhoneNumber());
+
+            // Send password reset email
+            ownerAccountService.sendPasswordResetEmail(
+                    application.getEmail(),
+                    application.getName());
+
+            // Send approval notification
+            ownerAccountService.sendApprovalEmail(
+                    application.getEmail(),
+                    application.getSportsCenterName(),
+                    application.getName());
+        } else if (request.status() == ApplicationStatus.REJECTED) {
+            // Send rejection notification
+            ownerAccountService.sendRejectionEmail(
+                    application.getEmail(),
+                    application.getSportsCenterName(),
+                    application.getName(),
+                    request.reviewNotes());
+        }
+
         return toResponse(repository.save(application));
     }
 
     @Transactional
     public void softDeleteApplication(Long applicationId, String deletedBy) {
         SportsCenterApplication application = repository.findOne(
-                        byId(applicationId).and(notDeleted()))
+                byId(applicationId).and(notDeleted()))
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Application not found"));
 
         application.setDeletedAt(Instant.now());
@@ -120,11 +148,34 @@ public class CenterApplicationService {
 
     @Transactional
     public CenterApplicationResponse approveApplication(Long applicationId, String reviewer) {
-        return updateApplicationStatus(
-                applicationId,
-                new UpdateApplicationStatusRequest(ApplicationStatus.APPROVED, null),
-                reviewer
-        );
+        // Get the application
+        SportsCenterApplication application = repository.findOne(
+                byId(applicationId).and(notDeleted()))
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Application not found"));
+
+        // 1. Create OWNER account if not exists
+        ownerAccountService.createOrUpdateOwnerAccount(
+                application.getEmail(),
+                application.getName(),
+                application.getPhoneNumber());
+
+        // 2. Send password reset email to set up account
+        ownerAccountService.sendPasswordResetEmail(
+                application.getEmail(),
+                application.getName());
+
+        // 3. Send approval notification
+        ownerAccountService.sendApprovalEmail(
+                application.getEmail(),
+                application.getSportsCenterName(),
+                application.getName());
+
+        // 4. Update application status to APPROVED
+        application.setStatus(ApplicationStatus.APPROVED);
+        application.setReviewedBy(reviewer);
+        application.setReviewedAt(Instant.now());
+
+        return toResponse(repository.save(application));
     }
 
     private Specification<SportsCenterApplication> buildFilterSpec(
@@ -132,8 +183,7 @@ public class CenterApplicationService {
             String city,
             LocalDate fromDate,
             LocalDate toDate,
-            String search
-    ) {
+            String search) {
         Specification<SportsCenterApplication> spec = notDeleted();
 
         if (status != null) {
@@ -160,8 +210,7 @@ public class CenterApplicationService {
                     cb.like(cb.lower(root.get("name")), pattern),
                     cb.like(cb.lower(root.get("email")), pattern),
                     cb.like(cb.lower(root.get("sportsCenterName")), pattern),
-                    cb.like(cb.lower(root.get("phoneNumber")), pattern)
-            ));
+                    cb.like(cb.lower(root.get("phoneNumber")), pattern)));
         }
 
         return spec;
@@ -209,7 +258,6 @@ public class CenterApplicationService {
                 application.getCreatedAt(),
                 application.getUpdatedAt(),
                 application.getDeletedBy(),
-                application.getDeletedAt()
-        );
+                application.getDeletedAt());
     }
 }

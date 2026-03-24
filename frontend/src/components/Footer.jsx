@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import OpenCenterFormModal from "./OpenCenterFormModal";
-import { useUser } from "../utils/userContext";
+import { useAuthStore } from "../stores/authStore";
 
 export default function Footer() {
   const [isOpenCenterModalOpen, setIsOpenCenterModalOpen] = useState(false);
-  const user = useUser();
+  const { user } = useAuthStore();
 
   return (
     <>
@@ -18,7 +18,7 @@ export default function Footer() {
             <p className="text-xs text-gray-500 mt-4">� 2026 Techsam Solutions Pvt Ltd. All rights reserved.</p>
           </div>
 
-          {!user.user && (<div className="flex items-center justify-center">
+          {!user && (<div className="flex items-center justify-center">
             <h4 className="text-white font-semibold mb-4 flex flex-col items-center text-center gap-3">
               <span>Open Your Sports Center Here</span>
               <button

@@ -1,6 +1,6 @@
 package com.sportify.sports.dto;
 
-import com.sportify.sports.entity.Role;
+import com.sportify.commonmodels.entity.Role;
 import lombok.*;
 
 @Getter
@@ -24,4 +24,3 @@ public class AuthResponse {
         private String phone;
     }
 }
-

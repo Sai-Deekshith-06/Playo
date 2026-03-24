@@ -1,5 +1,11 @@
 import { Routes, Route } from "react-router-dom";
 import Home from "./Pages/Home";
+import Login from "./Pages/Login";
+import Register from "./Pages/Register";
+import ForgotPassword from "./Pages/ForgotPassword";
+import ResetPassword from "./Pages/ResetPassword";
+import AdminDashboard from "./Pages/AdminDashboard";
+import CenterApplications from "./Pages/CenterApplications";
 import "./App.css";
 import Trainers from "./Pages/trainer/Trainer";
 import Play from "./Pages/play/Play";
@@ -12,26 +18,44 @@ import Player from "./Pages/player/Player";
 import Admin from "./Pages/admin/admin";
 import Layout from "./layouts/Layout";
 import { PlayerProtectedRoute, AdminProtectedRoute } from "./utils/ProtectedRoute";
+import { useAuthStore } from "./stores/authStore";
+import { useEffect } from "react";
 
 function App() {
+  const { initAuth, setupSessionListener } = useAuthStore();
+
+  useEffect(() => {
+    initAuth();
+    const unsubscribe = setupSessionListener();
+    return unsubscribe;
+  }, [initAuth, setupSessionListener]);
+
   return (
     <Routes>
       <Route path="/" element={<Home />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+
       <Route element={<Layout />}>
         <Route path="/games" element={<Play />} />
         <Route path="/venues" element={<Book />} />
         <Route path="/trainer" element={<Trainers />} />
+        <Route path="/myprofile" element={<Player />} />
         <Route path="/venues/venue/:id" element={<VenueDetails />} />
         <Route path="/venues/coaching/:id" element={<CoachingDetails />} />
         <Route path="/venues/event/:id" element={<EventDetails />} />
         <Route path="/venues/membership/:id" element={<MembershipDetails />} />
-        <Route element={<PlayerProtectedRoute />}>
-          <Route path="/myprofile" element={<Player />} />
-        </Route>
         <Route element={<AdminProtectedRoute />}>
           <Route path="/admin" element={<Admin />} />
         </Route>
       </Route>
+
+      {/* Admin Dashboard Routes */}
+      <Route path="/admin-dashboard" element={<AdminDashboard />} />
+      <Route path="/admin-dashboard/applications" element={<CenterApplications />} />
+      <Route path="/center-applications" element={<CenterApplications />} />
     </Routes>
   );
 }

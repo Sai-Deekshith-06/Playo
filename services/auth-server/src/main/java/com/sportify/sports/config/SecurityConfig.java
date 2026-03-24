@@ -4,6 +4,7 @@ import com.sportify.sports.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -17,6 +18,10 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableMethodSecurity
+@EnableJpaRepositories(basePackages = {
+                "com.sportify.sports.repository",
+                "com.sportify.commonmodels.repository"
+})
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -35,9 +40,15 @@ public class SecurityConfig {
                                                 .requestMatchers(
                                                                 "/api/auth/register",
                                                                 "/api/auth/login",
-                                                                "/api/auth/logout")
+                                                                "/api/auth/logout",
+                                                                "/api/auth/forgot-password",
+                                                                "/api/auth/validate-reset-token/**",
+                                                                "/api/auth/reset-password",
+                                                                "/api/auth/resend-reset-email")
                                                 .permitAll()
                                                 .requestMatchers("/error", "/health", "/actuator/health").permitAll()
+                                                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/webjars/**")
+                                                .permitAll()
                                                 .requestMatchers("/api/upload/**").authenticated()
                                                 .anyRequest().authenticated())
                                 .addFilterBefore(jwtFilter,

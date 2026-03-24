@@ -1,4 +1,4 @@
-package com.sportify.sports.entity;
+package com.sportify.commonmodels.entity;
 
 public enum Role {
     USER,

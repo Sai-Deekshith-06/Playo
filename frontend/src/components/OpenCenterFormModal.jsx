@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from "react";
 import ReactDOM from "react-dom";
 import axiosInstance from "../api/axios";
+import { toast } from "react-toastify";
+import { toast as toastify } from "react-hot-toast";
 
 const initialForm = {
     name: "",
@@ -116,7 +118,7 @@ export default function OpenCenterFormModal({ isOpen, onClose }) {
 
         const validationErrors = validateForm(form);
         setErrors(validationErrors);
-        if (Object.keys(validationErrors).length > 0) return;
+        // if (Object.keys(validationErrors).length > 0) return;
 
         const payload = {
             name: form.name.trim(),
@@ -142,11 +144,14 @@ export default function OpenCenterFormModal({ isOpen, onClose }) {
             setIsSubmitting(true);
             await axiosInstance.post("/api/public/center-applications", payload);
             resetAndClose();
+            toast.info("Our team will review your application and get back to you within 3-5 business days. Via email.");
+            toastify.success("Your application has been submitted successfully!");
         } catch (error) {
             setApiError(
                 error?.response?.data?.message ||
                 "Unable to submit the application right now. Please try again."
             );
+            toastify.error("Failed to submit application. Please check the form and try again.");
         } finally {
             setIsSubmitting(false);
         }

@@ -1,8 +1,8 @@
 package com.sportify.sports.config;
 
-import com.sportify.sports.entity.Role;
-import com.sportify.sports.entity.User;
-import com.sportify.sports.repository.UserRepository;
+import com.sportify.commonmodels.entity.Role;
+import com.sportify.commonmodels.entity.User;
+import com.sportify.commonmodels.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;

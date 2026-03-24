@@ -1,45 +1,50 @@
 import React, { useEffect, useState } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, Navigate } from "react-router-dom";
 import { isSessionValid } from "./auth";
-import { useUser } from "./userContext";
+import { useAuthStore } from "../stores/authStore";
+import toast from "react-hot-toast";
 
 export const PlayerProtectedRoute = () => {
     const [isReady, setIsReady] = useState(false);
-    const { logout } = useUser();
+    const { user, logout } = useAuthStore();
 
     useEffect(() => {
         const verify = () => {
             const token = localStorage.getItem("spj");
             const userRaw = localStorage.getItem("user");
             if (!token || !userRaw) {
-                logout("Please log in to access this page.");
+                toast.error("Please log in to access this page.");
+                logout();
                 return;
             }
 
-            let user = null;
+            let parsedUser = null;
             try {
-                user = JSON.parse(userRaw);
+                parsedUser = JSON.parse(userRaw);
             } catch {
-                user = null;
+                parsedUser = null;
             }
 
-            if (!user) {
-                logout("Please log in to access this page.");
+            if (!parsedUser) {
+                toast.error("Session data corrupted. Please log in again.");
+                logout();
                 return;
             }
 
-            const role = (user.role || "").toString().toUpperCase();
+            const role = (parsedUser.role || "").toString().toUpperCase();
             if (role && role !== "PLAYER" && role !== "USER") {
-                logout("Unauthorized access.");
+                toast.error("Unauthorized access. Admin users cannot access this area.");
+                logout();
                 return;
             }
 
-            if (isSessionValid(token, user)) {
+            if (isSessionValid(token, parsedUser)) {
                 setIsReady(true);
                 return;
             }
 
-            logout("Session expired. Please log in again.");
+            toast.error("Session expired. Please log in again.");
+            logout();
         };
 
         verify();
@@ -51,14 +56,15 @@ export const PlayerProtectedRoute = () => {
 
 export const AdminProtectedRoute = () => {
     const [isReady, setIsReady] = useState(false);
-    const { logout } = useUser();
+    const { logout } = useAuthStore();
 
     useEffect(() => {
         const verify = () => {
             const token = localStorage.getItem("spj");
             const userRaw = localStorage.getItem("user");
             if (!token || !userRaw) {
-                logout("Please log in.");
+                toast.error("Please log in as an admin.");
+                logout();
                 return;
             }
 
@@ -70,13 +76,15 @@ export const AdminProtectedRoute = () => {
             }
 
             if (!user) {
-                logout("Please log in as admin.");
+                toast.error("Invalid session. Please log in as admin.");
+                logout();
                 return;
             }
 
             const role = (user.role || "").toString().toUpperCase();
             if (role !== "ADMIN") {
-                logout(`Unauthorized access.`);
+                toast.error("Unauthorized. Admin access required.");
+                logout();
                 return;
             }
 
@@ -85,7 +93,8 @@ export const AdminProtectedRoute = () => {
                 return;
             }
 
-            logout("Session expired. Please log in again.");
+            toast.error("Session expired. Please log in again.");
+            logout();
         };
 
         verify();
