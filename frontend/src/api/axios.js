@@ -23,7 +23,7 @@ const getApiUrl = () => {
 
 const axiosInstance = axios.create({
     baseURL: getApiUrl(),
-    withCredentials: false,
+    withCredentials: true,
 });
 
 // Log API URL for debugging

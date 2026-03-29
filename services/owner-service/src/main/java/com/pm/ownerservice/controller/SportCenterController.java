@@ -110,4 +110,15 @@ public class SportCenterController {
         List<SportCenterResponse> centers = sportCenterService.getCentersByCity(city);
         return ResponseEntity.ok(centers);
     }
+
+    /**
+     * GET /api/owners/centers/public/all - Get all centers (public, no auth
+     * required)
+     */
+    @GetMapping("/public/all")
+    public ResponseEntity<List<SportCenterResponse>> getAllCentersPublic() {
+        log.info("Fetching all centers (public)");
+        List<SportCenterResponse> centers = sportCenterService.getAllCenters();
+        return ResponseEntity.ok(centers);
+    }
 }

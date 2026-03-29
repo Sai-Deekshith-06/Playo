@@ -6,42 +6,79 @@ import axiosInstance from "../../../api/axios";
 
 const PAGE = 6;
 
-export default function VenuesList() {
+export default function VenuesList({ initialSearchTerm = "", initialSportFilter = "All Sports" }) {
   const [visible, setVisible] = useState(PAGE);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
+  const [sportFilter, setSportFilter] = useState(initialSportFilter);
   const [allVenues, setAllVenues] = useState(staticVenues);
+  const [loadingVenues, setLoadingVenues] = useState(true);
+  const [error, setError] = useState(null);
 
+  // Fetch venues from API
   useEffect(() => {
-    // Fetch newly created venues from backend
-    axiosInstance.get("/api/owners/centers")
+    setLoadingVenues(true);
+    setError(null);
+    
+    axiosInstance.get("/api/owners/centers/public/all")
       .then(res => {
-        const dynamicVenues = res.data.map(center => ({
-          id: center.id, // Using raw database ID
+        console.log("✅ Venues fetched from API:", res.data);
+        
+        const dynamicVenues = (res.data || []).map(center => ({
+          id: center.id,
           title: center.name,
-          location: `${center.city}`, // Shortened for matching style
-          rating: 4.5, // Mock rating
-          reviews: 0,
-          price: "₹₹",
-          sports: center.facilities ? center.facilities.split(",") : [],
+          location: center.city || "Unknown",
+          rating: center.rating || 4.5,
+          reviews: center.reviews || 0,
+          price: center.price ? `₹${center.price}` : "₹₹",
+          sports: center.facilities ? center.facilities.split(",").map(s => s.trim()) : [],
           image: center.imageUrl || "https://images.unsplash.com/photo-1547347298-4074fc3086f0?q=80&w=1200"
         }));
         
-        // Merge without ID clashes
+        // Merge dynamic venues with static venues (dynamic first for priority)
         const merged = [...dynamicVenues, ...staticVenues.filter(sv => !dynamicVenues.find(dv => dv.id === sv.id))];
         setAllVenues(merged);
+        setLoadingVenues(false);
       })
-      .catch(err => console.error("Failed to fetch dynamic venues", err));
+      .catch(err => {
+        console.warn("⚠️ Failed to fetch from API, using static venues only:", err.message);
+        setAllVenues(staticVenues);
+        setError(null); // Don't show error, just use static data
+        setLoadingVenues(false);
+      });
   }, []);
+
+  // Update search term when hero search changes
+  useEffect(() => {
+    setSearchTerm(initialSearchTerm);
+    setVisible(PAGE);
+  }, [initialSearchTerm]);
+
+  // Update sport filter when hero sport filter changes
+  useEffect(() => {
+    setSportFilter(initialSportFilter);
+    setVisible(PAGE);
+  }, [initialSportFilter]);
 
   const showMore = () => setVisible(v => Math.min(v + PAGE, allVenues.length));
 
-  const filteredVenues = allVenues.filter(v => 
-    v.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    v.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (v.sports || []).some(sport => sport.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  // Filter venues based on search term AND sport filter
+  const filteredVenues = allVenues.filter(v => {
+    const matchesSearch = !searchTerm || 
+      v.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      v.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (v.sports || []).some(sport => sport.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    const matchesSport = sportFilter === "All Sports" || 
+      (v.sports || []).some(sport => sport.toLowerCase().includes(sportFilter.toLowerCase()));
+    
+    return matchesSearch && matchesSport;
+  });
 
   const slice = filteredVenues.slice(0, visible);
+
+  if (loadingVenues) {
+    return <div className="text-center py-10 text-gray-500">Loading venues...</div>;
+  }
 
   return (
     <div>
@@ -64,6 +101,13 @@ export default function VenuesList() {
           />
         </div>
       </div>
+
+      {error && (
+        <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800">
+          {error}
+        </div>
+      )}
+
       {filteredVenues.length === 0 ? (
         <div className="text-center py-10 text-gray-500 font-medium">
           No venues found matching your search.

@@ -124,4 +124,15 @@ public class SportCenterService {
                 .map(SportCenterResponse::fromEntity)
                 .collect(Collectors.toList());
     }
+
+    /**
+     * Get all centers (public - no ownership filtering)
+     */
+    public List<SportCenterResponse> getAllCenters() {
+        log.info("Fetching all centers");
+        return sportCenterRepository.findAll()
+                .stream()
+                .map(SportCenterResponse::fromEntity)
+                .collect(Collectors.toList());
+    }
 }
